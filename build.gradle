@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'maven-publish'
-    id 'findbugs'
+    //id 'findbugs'
     id 'jacoco'
     id 'com.github.kt3k.coveralls' version '2.4.0x'
 }
@@ -88,12 +88,12 @@ test {
     }
 }
 
-findbugsMain {
+/*findbugsMain {
     reports {
         xml.enabled = false
         html.enabled = true
     }
-}
+}*/
 
 jacocoTestReport {
     reports {
