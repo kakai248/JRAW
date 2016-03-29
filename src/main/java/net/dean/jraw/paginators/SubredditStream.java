@@ -41,6 +41,6 @@ public class SubredditStream extends GenericPaginator<Subreddit> {
 
     @Override
     public String[] getWhereValues() {
-        return new String[] {"popular", "new", "gold", "employee"};
+        return new String[] {"default", "popular", "new", "gold", "employee"};
     }
 }
