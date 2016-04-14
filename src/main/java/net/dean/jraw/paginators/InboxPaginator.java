@@ -27,7 +27,8 @@ public class InboxPaginator extends GenericPaginator<Message> {
 
     @Override
     public String[] getWhereValues() {
-        return new String[] {"inbox", "unread", "messages", "sent", "moderator", "moderator/unread", "mentions"};
+        return new String[] {"inbox", "unread", "messages", "sent", "moderator", "moderator/unread",
+                "comments", "selfreply", "mentions"};
     }
 
     @Override
