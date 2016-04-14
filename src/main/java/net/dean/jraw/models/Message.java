@@ -29,6 +29,11 @@ public abstract class Message extends Contribution implements Distinguishable {
     }
 
     @JsonProperty
+    public String getRecipient() {
+        return data("dest");
+    }
+
+    @JsonProperty
     public String getBody() {
         return data("body");
     }
