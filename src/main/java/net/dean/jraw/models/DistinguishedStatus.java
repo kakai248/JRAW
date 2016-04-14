@@ -16,13 +16,15 @@ public enum DistinguishedStatus {
      * Various other special distinguishes (most commonly seen as the darker red [Δ] "admin emeritus"
      * (<a href="http://www.reddit.com/r/bestof/comments/175prt/alilarter_connects_with_a_user_who_has_a/c82tlns">example</a>)
      */
-    SPECIAL;
+    SPECIAL,
+    /** Used in automatic messages regarding gold subscription */
+    GOLD_AUTO;
 
     /** The value of the "distinguished" JSON field */
     private String jsonValue;
 
     DistinguishedStatus() {
-        this.jsonValue = this.name().toLowerCase();
+        this.jsonValue = this.name().toLowerCase().replace("_", "-");
     }
 
     DistinguishedStatus(String jsonValue) {
