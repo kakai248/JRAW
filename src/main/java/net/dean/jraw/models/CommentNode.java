@@ -254,6 +254,61 @@ public final class CommentNode implements Iterable<CommentNode> {
     }
 
     /**
+     * Inserts a comment with a fullName into the tree. This method
+     * returns only new <em>root</em> nodes. If this CommentNode is not associated with a {@link MoreChildren}, then an
+     * empty list is returned. A null value is never returned.
+     * <p>
+     * This is useful to insert a reply directly into the tree instead of reloading the thread to see
+     * the reply.
+     *
+     * @param fullName The comment fullName to insert
+     * @return A list of the thing t
+     * @throws NetworkException If the request was not successful
+     */
+    public List<CommentNode> insertComment(RedditClient reddit, String fullName) throws NetworkException {
+
+        int relativeRootDepth = depth + 1;
+        List<CommentNode> newRootNodes = new ArrayList<>();
+        this.moreChildren = null;
+
+        List<Comment> newComments = new ArrayList<>();
+
+        // Assert every Thing is either a Comment or a MoreChildren
+        Thing t = reddit.get(fullName).get(0);
+        if (t instanceof Comment) {
+            newComments.add((Comment) t);
+        } else {
+            throw new IllegalStateException("Received a Thing that was not a Comment, was "
+                    + t.getClass().getName());
+        }
+
+        // Comments from /api/morechildren are listed as if they were iterated in pre-order traversal
+        CommentNode parent = this;
+        for (Iterator<Comment> it = newComments.iterator(); it.hasNext(); ) {
+            Comment newComment = it.next();
+            // Navigate up the tree until we find the comment whose ID matches the new comment's parent_id
+            while (!newComment.getParentId().equals(parent.getComment().getFullName())) {
+                parent = parent.parent;
+            }
+            // Instantiate a new CommentNode. The MoreChildren, if applicable, will be instantiated later.
+            CommentNode node = new CommentNode(ownerId, parent, newComment, null, commentSort, parent.depth + 1);
+            // Remove the Comment from the list
+            it.remove();
+            if (node.depth == relativeRootDepth)
+                newRootNodes.add(node);
+            parent.children.add(node);
+            parent = node;
+        }
+
+        // newComments should be empty if everything was successful
+        for (Comment c : newComments) {
+            JrawUtils.logger().warn("Unable to find parent for " + c);
+        }
+
+        return newRootNodes;
+    }
+
+    /**
      * Gets more comments from {@link #getMoreComments(RedditClient)} and inserts them into the tree. This method
      * returns only new <em>root</em> nodes. If this CommentNode is not associated with a {@link MoreChildren}, then an
      * empty list is returned. A null value is never returned.
