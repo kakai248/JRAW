@@ -254,18 +254,18 @@ public final class CommentNode implements Iterable<CommentNode> {
     }
 
     /**
-     * Inserts a comment with a fullName into the tree. This method
+     * Inserts a comment with a fullname into the tree. This method
      * returns only new <em>root</em> nodes. If this CommentNode is not associated with a {@link MoreChildren}, then an
      * empty list is returned. A null value is never returned.
      * <p>
      * This is useful to insert a reply directly into the tree instead of reloading the thread to see
      * the reply.
      *
-     * @param fullName The comment fullName to insert
+     * @param fullname The comment fullname to insert
      * @return A list of the thing t
      * @throws NetworkException If the request was not successful
      */
-    public List<CommentNode> insertComment(RedditClient reddit, String fullName) throws NetworkException {
+    public List<CommentNode> insertComment(RedditClient reddit, String fullname) throws NetworkException {
 
         int relativeRootDepth = depth + 1;
         List<CommentNode> newRootNodes = new ArrayList<>();
@@ -274,7 +274,7 @@ public final class CommentNode implements Iterable<CommentNode> {
         List<Comment> newComments = new ArrayList<>();
 
         // Assert every Thing is either a Comment or a MoreChildren
-        Thing t = reddit.get(fullName).get(0);
+        Thing t = reddit.get(fullname).get(0);
         if (t instanceof Comment) {
             newComments.add((Comment) t);
         } else {
