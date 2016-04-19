@@ -70,7 +70,7 @@ public final class CommentNode implements Iterable<CommentNode> {
 
     private MoreChildren moreChildren;
     private final String ownerId;
-    private final Comment comment;
+    private Comment comment;
     private final CommentNode parent;
     private final List<CommentNode> children;
     private final int depth;
@@ -306,6 +306,23 @@ public final class CommentNode implements Iterable<CommentNode> {
         }
 
         return newRootNodes;
+    }
+
+    /**
+     * Updates the comment represented by this node.
+     * This method is useful to update a comment after it has been edited.
+     *
+     * @throws NetworkException If the request was not successful
+     */
+    public void updateComment(RedditClient reddit) throws NetworkException {
+        // Assert every Thing is either a Comment or a MoreChildren
+        Thing t = reddit.get(comment.getFullName()).get(0);
+        if (t instanceof Comment) {
+            this.comment = (Comment) t;
+        } else {
+            throw new IllegalStateException("Received a Thing that was not a Comment, was "
+                    + t.getClass().getName());
+        }
     }
 
     /**
