@@ -239,4 +239,20 @@ public class ReadOnlyDataTest extends RedditTest {
             handle(e);
         }
     }
+
+    @Test
+    public void testNonexistentSubreddit() {
+        try {
+            reddit.getSubreddit("1jfkdsla9fudal"); // Subreddit that doesn't exist
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // pass
+        }
+        reddit.getSubreddit("pics"); // Ensure subreddits that exist don't throw an Exception
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testInviteOnlySubreddit() {
+        reddit.getSubreddit("inviteonly"); // /r/inviteonly is invite only
+    }
 }

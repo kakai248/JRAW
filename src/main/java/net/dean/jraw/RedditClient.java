@@ -297,12 +297,26 @@ public class RedditClient extends RestClient {
      * @param name The subreddit's name
      * @return A new Subreddit object
      * @throws NetworkException If the request was not successful
+     * @throws IllegalArgumentException If the subreddit is private, quarantined, invite only, or does not exist
      */
     @EndpointImplementation(Endpoints.SUBREDDIT_ABOUT)
     public Subreddit getSubreddit(String name) throws NetworkException {
-        return execute(request()
-                .endpoint(Endpoints.SUBREDDIT_ABOUT, name)
-                .build()).as(Subreddit.class);
+        RestResponse response;
+        try {
+            response = execute(request()
+                    .endpoint(Endpoints.SUBREDDIT_ABOUT, name)
+                    .build());
+        } catch (NetworkException e) {
+            if (e.getResponse().getStatusCode() == 403) // Received 403 Forbidden
+                throw new IllegalArgumentException("Subreddit is private, quarantined, or invite only", e);
+            throw e;
+        }
+
+        // When the subreddit doesn't exit, reddit redirects /{subreddit}/about to /search which returns a Listing
+        String kind = response.getJson().get("kind").textValue();
+        if (kind.startsWith(Model.Kind.LISTING.getValue()))
+            throw new IllegalArgumentException("Subreddit does not exist");
+        return response.as(Subreddit.class);
     }
 
     /**
