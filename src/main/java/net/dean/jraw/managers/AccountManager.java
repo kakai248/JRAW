@@ -2,11 +2,11 @@ package net.dean.jraw.managers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
+
 import net.dean.jraw.AccountPreferencesEditor;
 import net.dean.jraw.ApiException;
 import net.dean.jraw.EndpointImplementation;
 import net.dean.jraw.Endpoints;
-import net.dean.jraw.util.JrawUtils;
 import net.dean.jraw.RedditClient;
 import net.dean.jraw.http.MediaTypes;
 import net.dean.jraw.http.NetworkException;
@@ -24,9 +24,13 @@ import net.dean.jraw.models.Thing;
 import net.dean.jraw.models.UserRecord;
 import net.dean.jraw.models.VoteDirection;
 import net.dean.jraw.models.attr.Votable;
+import net.dean.jraw.util.JrawUtils;
 
 import java.net.URL;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class manages common user actions, such as voting, commenting, saving, etc.
@@ -108,14 +112,27 @@ public class AccountManager extends AbstractManager {
      * @throws NetworkException If the request was not successful
      * @throws ApiException If the API returned an error
      */
-    @EndpointImplementation(Endpoints.VOTE)
     public <T extends Thing & Votable> void vote(T s, VoteDirection voteDirection) throws NetworkException, ApiException {
+        vote(s.getFullName(), voteDirection);
+    }
+
+    /**
+     * Votes on a comment or submission. Please note that "API clients proxying a human's action one-for-one are OK, but
+     * bots deciding how to vote on content or amplifying a human's vote are not".
+     *
+     * @param fullname The submission fullname to vote on
+     * @param voteDirection How to vote
+     * @throws NetworkException If the request was not successful
+     * @throws ApiException If the API returned an error
+     */
+    @EndpointImplementation(Endpoints.VOTE)
+    public void vote(String fullname, VoteDirection voteDirection) throws NetworkException, ApiException {
         genericPost(reddit.request()
                 .endpoint(Endpoints.VOTE)
                 .post(JrawUtils.mapOf(
-                                "api_type", "json",
-                                "dir", voteDirection.getValue(),
-                                "id", s.getFullName())
+                        "api_type", "json",
+                        "dir", voteDirection.getValue(),
+                        "id", fullname)
                 ).build());
     }
 
@@ -126,7 +143,17 @@ public class AccountManager extends AbstractManager {
      * @throws ApiException If the API returned an error
      */
     public void save(PublicContribution s) throws NetworkException, ApiException {
-        setSaved(s, true);
+        setSaved(s.getFullName(), true);
+    }
+
+    /**
+     * Saves a given submission
+     * @param fullname The submission fullname to save
+     * @throws NetworkException If the request was not successful
+     * @throws ApiException If the API returned an error
+     */
+    public void save(String fullname ) throws NetworkException, ApiException {
+        setSaved(fullname, true);
     }
 
     /**
@@ -136,24 +163,34 @@ public class AccountManager extends AbstractManager {
      * @throws ApiException If the API returned an error
      */
     public void unsave(PublicContribution s) throws NetworkException, ApiException {
-        setSaved(s, false);
+        setSaved(s.getFullName(), false);
+    }
+
+    /**
+     * Unsaves a given submission
+     * @param fullname The submission fullname to unsave
+     * @throws NetworkException If the request was not successful
+     * @throws ApiException If the API returned an error
+     */
+    public void unsave(String fullname) throws NetworkException, ApiException {
+        setSaved(fullname, false);
     }
 
     /**
      * Saves or unsaves a submission.
      *
-     * @param s The submission to save or unsave
+     * @param fullname The submission fullname to save or unsave
      * @param save Whether or not to save the submission
      * @throws NetworkException If the request was not successful
      * @throws ApiException If the API returned an error
      */
     @EndpointImplementation({Endpoints.SAVE, Endpoints.UNSAVE})
-    private void setSaved(PublicContribution s, boolean save) throws NetworkException, ApiException {
+    private void setSaved(String fullname, boolean save) throws NetworkException, ApiException {
         // Send it to "/api/save" if save == true, "/api/unsave" if save == false
         genericPost(reddit.request()
                 .endpoint(save ? Endpoints.SAVE : Endpoints.UNSAVE)
                 .post(JrawUtils.mapOf(
-                        "id", s.getFullName()
+                        "id", fullname
                 )).build());
     }
 
@@ -165,12 +202,24 @@ public class AccountManager extends AbstractManager {
      * @throws NetworkException If the request was not successful
      * @throws ApiException If the API returned an error
      */
-    @EndpointImplementation(Endpoints.SENDREPLIES)
     public void sendRepliesToInbox(Submission s, boolean send) throws NetworkException, ApiException {
+        sendRepliesToInbox(s.getFullName(), send);
+    }
+
+    /**
+     * Sets whether or not replies to this submission should be sent to your inbox. You must own this Submission.
+     *
+     * @param fullname The submission fullname to modify
+     * @param send Whether or not to send replies to your inbox
+     * @throws NetworkException If the request was not successful
+     * @throws ApiException If the API returned an error
+     */
+    @EndpointImplementation(Endpoints.SENDREPLIES)
+    public void sendRepliesToInbox(String fullname, boolean send) throws NetworkException, ApiException {
         genericPost(reddit.request()
                 .endpoint(Endpoints.SENDREPLIES)
                 .post(JrawUtils.mapOf(
-                        "id", s.getFullName(),
+                        "id", fullname,
                         "state", send
                 )).build());
     }
@@ -183,15 +232,30 @@ public class AccountManager extends AbstractManager {
      * @throws NetworkException If the request was not successful
      * @throws ApiException If the API returned an error
      */
-    @EndpointImplementation({Endpoints.HIDE, Endpoints.UNHIDE})
     public void hide(boolean hide, Submission s, Submission... more) throws NetworkException, ApiException {
-        String ids = s.getFullName();
+        String[] idList = null;
         if (more != null) {
-            String[] idList = new String[more.length];
+            idList = new String[more.length];
             for (int i = 0; i < more.length; i++) {
                 idList[i] = more[i].getFullName();
             }
-            ids = ids + "," + JrawUtils.join(idList);
+        }
+        hide(hide, s.getFullName(), idList);
+    }
+
+    /**
+     * Sets whether or not a submission is hidden
+     *
+     * @param fullname The submission fullname to hide or unhide
+     * @param hide If the submission is to be hidden
+     * @throws NetworkException If the request was not successful
+     * @throws ApiException If the API returned an error
+     */
+    @EndpointImplementation({Endpoints.HIDE, Endpoints.UNHIDE})
+    public void hide(boolean hide, String fullname, String... more) throws NetworkException, ApiException {
+        String ids = fullname;
+        if (more != null) {
+            ids = ids + "," + JrawUtils.join(more);
         }
         genericPost(reddit.request()
                 .endpoint(hide ? Endpoints.HIDE : Endpoints.UNHIDE)
@@ -208,13 +272,25 @@ public class AccountManager extends AbstractManager {
      * @throws NetworkException If the request was not successful
      * @throws ApiException If the API returned an error
      */
-    @EndpointImplementation(Endpoints.EDITUSERTEXT)
     public <T extends PublicContribution> void updateContribution(T contribution, String text) throws NetworkException, ApiException {
+        updateContribution(contribution.getFullName(), text);
+    }
+
+    /**
+     * Updates the body of a self-text Submission or Comment
+     *
+     * @param fullname The self-post or comment fullname that to edit the text for
+     * @param text The new body
+     * @throws NetworkException If the request was not successful
+     * @throws ApiException If the API returned an error
+     */
+    @EndpointImplementation(Endpoints.EDITUSERTEXT)
+    public void updateContribution(String fullname, String text) throws NetworkException, ApiException {
         genericPost(reddit.request().endpoint(Endpoints.EDITUSERTEXT)
                 .post(JrawUtils.mapOf(
                         "api_type", "json",
                         "text", text,
-                        "thing_id", contribution.getFullName()
+                        "thing_id", fullname
                 )).build());
     }
 
@@ -227,14 +303,27 @@ public class AccountManager extends AbstractManager {
      * @throws NetworkException If the request was not successful
      * @throws ApiException If the Reddit API returned an error
      */
-    @EndpointImplementation(Endpoints.COMMENT)
     public <T extends Contribution> String reply(T contribution, String text) throws NetworkException, ApiException {
+        return reply(contribution.getFullName(), text);
+    }
+
+    /**
+     * Sends a reply to a Comment, Submission, or Message.
+     *
+     * @param fullname The contribution fullname to reply to
+     * @param text The body of the message, formatted in Markdown
+     * @return The ID of the newly created reply
+     * @throws NetworkException If the request was not successful
+     * @throws ApiException If the Reddit API returned an error
+     */
+    @EndpointImplementation(Endpoints.COMMENT)
+    public <T extends Contribution> String reply(String fullname, String text) throws NetworkException, ApiException {
         RestResponse response = genericPost(reddit.request()
                 .endpoint(Endpoints.COMMENT)
                 .post(JrawUtils.mapOf(
                         "api_type", "json",
                         "text", text,
-                        "thing_id", contribution.getFullName()
+                        "thing_id", fullname
                 )).build());
 
         return response.getJson().get("json").get("data").get("things").get(0).get("data").get("id").asText();
@@ -246,9 +335,19 @@ public class AccountManager extends AbstractManager {
      * @throws NetworkException If the request was not successful
      * @see #unsubscribe(Subreddit)
      */
-    @EndpointImplementation(Endpoints.SUBSCRIBE)
     public void subscribe(Subreddit subreddit) throws NetworkException {
-        setSubscribed(subreddit, true);
+        setSubscribed(subreddit.getFullName(), true);
+    }
+
+    /**
+     * Subscribes to a subreddit
+     * @param fullname The subreddit fullname to subscribe to
+     * @throws NetworkException If the request was not successful
+     * @see #unsubscribe(Subreddit)
+     */
+    @EndpointImplementation(Endpoints.SUBSCRIBE)
+    public void subscribe(String fullname) throws NetworkException {
+        setSubscribed(fullname, true);
     }
 
     /**
@@ -258,21 +357,31 @@ public class AccountManager extends AbstractManager {
      * @see #subscribe(Subreddit)
      */
     public void unsubscribe(Subreddit subreddit) throws NetworkException {
-        setSubscribed(subreddit, false);
+        setSubscribed(subreddit.getFullName(), false);
+    }
+
+    /**
+     * Unsubscribes from a subreddit
+     * @param fullname The subreddit fullname to unsubscribe to
+     * @throws NetworkException If the request was not successful
+     * @see #subscribe(Subreddit)
+     */
+    public void unsubscribe(String fullname) throws NetworkException {
+        setSubscribed(fullname, false);
     }
 
     /**
      * Subscribe or unsubscribe to a subreddit
      *
-     * @param subreddit The subreddit to (un)subscribe to
+     * @param fullname The subreddit fullname to (un)subscribe to
      * @param sub Whether to subscribe (true) or unsubscribe (false)
      * @throws NetworkException If the request was not successful
      */
-    private void setSubscribed(Subreddit subreddit, boolean sub) throws NetworkException {
+    private void setSubscribed(String fullname, boolean sub) throws NetworkException {
         reddit.execute(reddit.request()
                 .endpoint(Endpoints.SUBSCRIBE)
                 .post(JrawUtils.mapOf(
-                        "sr", subreddit.getFullName(),
+                        "sr", fullname,
                         "action", sub ? "sub" : "unsub"
                         // JSON is returned on subscribe, HTML is returned on unsubscribe
                 )).build());
@@ -305,8 +414,20 @@ public class AccountManager extends AbstractManager {
      * @throws ApiException If the Reddit API returned an error
      */
     public List<FlairTemplate> getFlairChoices(Submission link) throws NetworkException, ApiException {
+        return getFlairChoices(link.getSubredditName(), link.getFullName());
+    }
+
+    /**
+     * Gets a list of possible flair templates for this submission
+     * @param subreddit The subreddit to look up
+     * @param linkFullname The submission fullname to look up
+     * @return A list of flair templates
+     * @throws NetworkException If the request was not successful
+     * @throws ApiException If the Reddit API returned an error
+     */
+    public List<FlairTemplate> getFlairChoices(String subreddit, String linkFullname) throws NetworkException, ApiException {
         ImmutableList.Builder<FlairTemplate> templates = ImmutableList.builder();
-        for (JsonNode choiceNode : getFlairChoicesRootNode(link.getSubredditName(), link).get("choices")) {
+        for (JsonNode choiceNode : getFlairChoicesRootNode(subreddit, linkFullname).get("choices")) {
             templates.add(new FlairTemplate(choiceNode));
         }
 
@@ -332,7 +453,19 @@ public class AccountManager extends AbstractManager {
      * @throws ApiException If the Reddit API returned an error
      */
     public FlairTemplate getCurrentFlair(Submission link) throws NetworkException, ApiException {
-        return new FlairTemplate(getFlairChoicesRootNode(link.getSubredditName(), link).get("current"));
+        return getCurrentFlair(link.getSubredditName(), link.getFullName());
+    }
+
+    /**
+     * Gets the current user flair for this subreddit
+     * @param subreddit The subreddit to look up
+     * @param linkFullname The submission fullname to look up
+     * @return The given submission's current flair
+     * @throws NetworkException If the request was not successful
+     * @throws ApiException If the Reddit API returned an error
+     */
+    public FlairTemplate getCurrentFlair(String subreddit, String linkFullname) throws NetworkException, ApiException {
+        return new FlairTemplate(getFlairChoicesRootNode(subreddit, linkFullname).get("current"));
     }
 
     /**
@@ -357,10 +490,15 @@ public class AccountManager extends AbstractManager {
     }
 
     /** Gives gold to a comment or submission */
-    @EndpointImplementation(Endpoints.OAUTH_GOLD_GILD_FULLNAME)
     public void giveGold(PublicContribution target) throws NetworkException, ApiException {
+        giveGold(target.getFullName());
+    }
+
+    /** Gives gold to a comment or submission */
+    @EndpointImplementation(Endpoints.OAUTH_GOLD_GILD_FULLNAME)
+    public void giveGold(String targetFullname) throws NetworkException, ApiException {
         genericPost(reddit.request()
-                .endpoint(Endpoints.OAUTH_GOLD_GILD_FULLNAME, target.getFullName())
+                .endpoint(Endpoints.OAUTH_GOLD_GILD_FULLNAME, targetFullname)
                 .post()
                 .build());
     }
@@ -483,8 +621,7 @@ public class AccountManager extends AbstractManager {
         }
     }
 
-    private JsonNode getFlairChoicesRootNode(String subreddit, Submission link) throws NetworkException, ApiException {
-        String linkFullname = link != null ? link.getFullName() : null;
+    private JsonNode getFlairChoicesRootNode(String subreddit, String linkFullname) throws NetworkException, ApiException {
         Map<String, String> formArgs = new HashMap<>();
         if (linkFullname != null) {
             formArgs.put("link", linkFullname);
