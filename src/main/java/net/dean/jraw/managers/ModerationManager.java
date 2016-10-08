@@ -1,6 +1,9 @@
 package net.dean.jraw.managers;
 
-import net.dean.jraw.*;
+import net.dean.jraw.ApiException;
+import net.dean.jraw.EndpointImplementation;
+import net.dean.jraw.Endpoints;
+import net.dean.jraw.RedditClient;
 import net.dean.jraw.http.AuthenticationMethod;
 import net.dean.jraw.http.NetworkException;
 import net.dean.jraw.http.RestResponse;
@@ -34,14 +37,27 @@ public class ModerationManager extends AbstractManager {
      * @throws net.dean.jraw.http.NetworkException If the request was not successful
      * @throws net.dean.jraw.ApiException          If the API returned an error
      */
-    @EndpointImplementation({Endpoints.MARKNSFW, Endpoints.UNMARKNSFW})
     public void setNsfw(Submission s, boolean nsfw) throws NetworkException,
+            ApiException {
+        setNsfw(s.getFullName(), nsfw);
+    }
+
+    /**
+     * Sets whether or not this submission should be marked as not safe for work
+     *
+     * @param fullname The submission fullname to modify
+     * @param nsfw     Whether or not this submission is not safe for work
+     * @throws net.dean.jraw.http.NetworkException If the request was not successful
+     * @throws net.dean.jraw.ApiException          If the API returned an error
+     */
+    @EndpointImplementation({Endpoints.MARKNSFW, Endpoints.UNMARKNSFW})
+    public void setNsfw(String fullname, boolean nsfw) throws NetworkException,
             ApiException {
         // "/api/marknsfw" if nsfw == true, "/api/unmarknsfw" if nsfw == false
         genericPost(reddit.request()
                 .endpoint(nsfw ? Endpoints.MARKNSFW : Endpoints.UNMARKNSFW)
                 .post(JrawUtils.mapOf(
-                        "id", s.getFullName()
+                        "id", fullname
                 )).build());
     }
 
@@ -84,13 +100,26 @@ public class ModerationManager extends AbstractManager {
      * @throws NetworkException If the request was not successful
      * @throws ApiException If the Reddit API returned an error
      */
-    @EndpointImplementation(Endpoints.SET_SUBREDDIT_STICKY)
     public void setSticky(Submission s, boolean sticky) throws NetworkException, ApiException {
+        setSticky(s.getFullName(), sticky);
+    }
+
+    /**
+     * Set or unset a self post as a sticky. You must be a moderator of the subreddit the submission was posted in for
+     * this request to complete successfully.
+     *
+     * @param fullname The submission fullname to set as a sticky. Must be a self post
+     * @param sticky Whether or not to set the submission as a stickied post
+     * @throws NetworkException If the request was not successful
+     * @throws ApiException If the Reddit API returned an error
+     */
+    @EndpointImplementation(Endpoints.SET_SUBREDDIT_STICKY)
+    public void setSticky(String fullname, boolean sticky) throws NetworkException, ApiException {
         genericPost(reddit.request()
                 .endpoint(Endpoints.SET_SUBREDDIT_STICKY)
                 .post(JrawUtils.mapOf(
                         "api_type", "json",
-                        "id", s.getFullName(),
+                        "id", fullname,
                         "state", sticky
                 )).build());
     }
@@ -137,8 +166,24 @@ public class ModerationManager extends AbstractManager {
      * @throws NetworkException If the request was not successful
      * @throws ApiException If the API returned an error
      */
-    public void setFlair(String subreddit, FlairTemplate template, String text, Submission submission) throws NetworkException, ApiException {
-        setFlair(subreddit, template, text, submission, null);
+    public void setSubmissionFlair(String subreddit, FlairTemplate template, String text, Submission submission) throws NetworkException, ApiException {
+        setFlair(subreddit, template, text, submission.getFullName(), null);
+    }
+
+    /**
+     * Sets the flair for a certain submission. If the currently authenticated user is <em>not</em> a moderator of the
+     * subreddit where the submission was posted, then the user must have posted the submission.
+     *
+     * @param subreddit The subreddit to set the flair on
+     * @param template The template to use
+     * @param text Optional text that will be used if the FlairTemplate's text is editable. If this is null and the
+     *             template is editable, the template's default text will be used.
+     * @param fullname The submission fullname to set the flair for
+     * @throws NetworkException If the request was not successful
+     * @throws ApiException If the API returned an error
+     */
+    public void setSubmissionFlair(String subreddit, FlairTemplate template, String text, String fullname) throws NetworkException, ApiException {
+        setFlair(subreddit, template, text, fullname, null);
     }
 
     /**
@@ -150,14 +195,14 @@ public class ModerationManager extends AbstractManager {
      * @param template The template to use
      * @param text Optional text that will be used if the FlairTemplate's text is editable. If this is null and the
      *             template is editable, the template's default text will be used.
-     * @param submission The submission to set the flair for
+     * @param fullname The submission fullname to set the flair for
      * @param username The name of the user to set the flair for. If this is null the authenticated user's name will be
      *                 used.
      * @throws IllegalArgumentException If both the submission and the username are null
      * @throws NetworkException If the request was not successful
      */
     @EndpointImplementation(Endpoints.SELECTFLAIR)
-    private void setFlair(String subreddit, FlairTemplate template, String text, Submission submission, String username)
+    private void setFlair(String subreddit, FlairTemplate template, String text, String fullname, String username)
             throws IllegalArgumentException, NetworkException, ApiException {
         if (subreddit == null) {
             throw new IllegalArgumentException("subreddit cannot be null");
@@ -167,8 +212,8 @@ public class ModerationManager extends AbstractManager {
                 "flair_template_id", template.getId()
         );
 
-        if (submission != null) {
-            args.put("link", submission.getFullName());
+        if (fullname != null) {
+            args.put("link", fullname);
         } else {
             if (username == null) {
                 if (reddit.getAuthenticationMethod() == AuthenticationMethod.NOT_YET) {
