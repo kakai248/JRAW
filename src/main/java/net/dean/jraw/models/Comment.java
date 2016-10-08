@@ -1,8 +1,9 @@
 package net.dean.jraw.models;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import net.dean.jraw.models.meta.JsonProperty;
 import net.dean.jraw.models.meta.Model;
-import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Date;
 
@@ -51,6 +52,12 @@ public class Comment extends PublicContribution {
     @JsonProperty
     public String getBody() {
         return data("body");
+    }
+
+    /** Gets the body html of the comment */
+    @JsonProperty
+    public String getBodyHtml() {
+        return data("body_html");
     }
 
     /**

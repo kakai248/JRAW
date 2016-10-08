@@ -1,8 +1,9 @@
 package net.dean.jraw.models;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import net.dean.jraw.models.meta.JsonProperty;
 import net.dean.jraw.models.meta.Model;
-import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -22,6 +23,11 @@ public final class UserRecord extends Thing {
      */
     public UserRecord(JsonNode dataNode) {
         super(dataNode);
+    }
+
+    @JsonProperty
+    public String getName() {
+        return data("name");
     }
 
     /**

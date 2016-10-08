@@ -1,9 +1,10 @@
 package net.dean.jraw.models;
 
-import net.dean.jraw.util.Dimension;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import net.dean.jraw.models.meta.JsonProperty;
 import net.dean.jraw.models.meta.Model;
-import com.fasterxml.jackson.databind.JsonNode;
+import net.dean.jraw.util.Dimension;
 
 /** This class represents a subreddit, such as /r/pics. */
 @Model(kind = Model.Kind.SUBREDDIT)
@@ -32,6 +33,14 @@ public final class Subreddit extends Thing implements Comparable<Subreddit> {
     @JsonProperty
     public String getSidebar() {
         return data("description");
+    }
+
+    /**
+     * Gets the subreddit's html description. This appears on the sidebar on the website.
+     */
+    @JsonProperty
+    public String getSidebarHtml() {
+        return data("description_html");
     }
 
     /** Gets the "human readable" name of the subreddit (ex: "pics") */
@@ -77,6 +86,12 @@ public final class Subreddit extends Thing implements Comparable<Subreddit> {
     @JsonProperty
     public String getPublicDescription() {
         return data("public_description");
+    }
+
+    /** Gets the html information that will show when this subreddit appears in a search */
+    @JsonProperty
+    public String getPublicDescriptionHtml() {
+        return data("public_description_html");
     }
 
     /** Checks if the subreddit's traffic page is publicly accessible */

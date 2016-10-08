@@ -1,6 +1,7 @@
 package net.dean.jraw.models;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
 import net.dean.jraw.models.meta.JsonProperty;
 import net.dean.jraw.models.meta.Model;
 import net.dean.jraw.models.meta.SubmissionSerializer;
@@ -157,6 +158,16 @@ public final class Submission extends PublicContribution {
     }
 
     /**
+     * Gets the raw html text of the self post. The string is unformatted, so it includes HTML tags.
+     * HTML entities such as '&amp;lt;', '&amp;gt;', and '&amp;amp;' are escaped.
+     * @return Gets the raw html text of the self post
+     */
+    @JsonProperty
+    public String getSelftextHtml() {
+        return data("selftext_html");
+    }
+
+    /**
      * Gets the subreddit that the submission is posted in (ex: "pics", "funny")
      * @return Gets the subreddit that the submission was posted in
      */
@@ -309,6 +320,11 @@ public final class Submission extends PublicContribution {
             return null;
         }
         return new Thumbnails(data.get(key).get("images").get(0));
+    }
+
+    @JsonProperty
+    public String getApprovedBy() {
+        return data("approved_by");
     }
 
     /** Gets a URL on the redd.it domain. For example, <a href="http://redd.it/92dd8">http://redd.it/92dd8</a> */
