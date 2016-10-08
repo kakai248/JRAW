@@ -4,14 +4,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.TreeTraverser;
+
 import net.dean.jraw.EndpointImplementation;
 import net.dean.jraw.Endpoints;
-import net.dean.jraw.util.JrawUtils;
 import net.dean.jraw.RedditClient;
 import net.dean.jraw.http.NetworkException;
 import net.dean.jraw.http.RestResponse;
 import net.dean.jraw.http.SubmissionRequest;
 import net.dean.jraw.models.meta.Model;
+import net.dean.jraw.util.JrawUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -312,13 +313,15 @@ public final class CommentNode implements Iterable<CommentNode> {
      * Updates the comment represented by this node.
      * This method is useful to update a comment after it has been edited.
      *
+     * @return The updated comment
      * @throws NetworkException If the request was not successful
      */
-    public void updateComment(RedditClient reddit) throws NetworkException {
+    public Comment updateComment(RedditClient reddit) throws NetworkException {
         // Assert every Thing is either a Comment or a MoreChildren
         Thing t = reddit.get(comment.getFullName()).get(0);
         if (t instanceof Comment) {
             this.comment = (Comment) t;
+            return this.comment;
         } else {
             throw new IllegalStateException("Received a Thing that was not a Comment, was "
                     + t.getClass().getName());
