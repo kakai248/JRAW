@@ -149,12 +149,6 @@ public class Comment extends PublicContribution {
         return data("parent_id");
     }
 
-    /** Checks if this post has been saved by the logged in user */
-    @JsonProperty
-    public Boolean isSaved() {
-        return data("saved", Boolean.class);
-    }
-
     /** Checks if the comment's score is currently hidden */
     @JsonProperty
     public Boolean isScoreHidden() {

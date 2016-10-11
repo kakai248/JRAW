@@ -78,6 +78,12 @@ public abstract class PublicContribution extends Contribution implements Disting
         return data("archived", Boolean.class);
     }
 
+    /** Checks if this contribution has been saved by the logged in user */
+    @JsonProperty
+    public Boolean isSaved() {
+        return data("saved", Boolean.class);
+    }
+
     /**
      * Gets removal reason for this contribution.
      */

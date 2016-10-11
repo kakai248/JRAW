@@ -139,15 +139,6 @@ public final class Submission extends PublicContribution {
     }
 
     /**
-     * True if saved by the logged in user
-     * @return True if saved by the logged in user
-     */
-    @JsonProperty
-    public Boolean isSaved() {
-        return data("saved", Boolean.class);
-    }
-
-    /**
      * Gets the raw text of the self post. The string is unformatted, so it includes Markdown markup such as "**" for bold.
      * HTML entities such as '&amp;lt;', '&amp;gt;', and '&amp;amp;' are escaped.
      * @return Gets the raw text of the self post
