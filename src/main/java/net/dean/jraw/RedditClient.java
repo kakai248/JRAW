@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This class provides a gateway to the services this library provides
@@ -47,6 +49,9 @@ public class RedditClient extends RestClient {
     private AuthenticationListener authListener;
     private OAuthData authData;
     private OAuthHelper authHelper;
+
+    /** Lock used to only allow one more children request */
+    public static final Lock morechildrenLock = new ReentrantLock();
 
     /**
      * Instantiates a new RedditClient and adds the given user agent to the default headers
@@ -553,6 +558,63 @@ public class RedditClient extends RestClient {
         }
 
         return trophies;
+    }
+
+    /**
+     * Gets a list of {@link Comment} and {@link MoreChildren} objects from a link. The resulting
+     * Things will be listed as if they were iterated in pre-order traversal.
+     *
+     * @param linkId The id of the submission
+     * @param moreIds The list of ids to retrieve
+     * @param commentSort The sorting used
+     * @return A list of new Comments and MoreChildren objects
+     * @throws NetworkException If the request was not successful
+     */
+    @EndpointImplementation(Endpoints.MORECHILDREN)
+    public List<Thing> getMoreComments(String linkId, List<String> moreIds, CommentSort commentSort)
+            throws NetworkException {
+
+        StringBuilder ids = new StringBuilder(moreIds.get(0));
+        for (int i = 1; i < moreIds.size(); i++) {
+            String other = moreIds.get(i);
+            ids.append(',').append(other);
+        }
+
+        RestResponse response;
+
+        // Make sure we are only making one request to this endpoint at a time, as noted by the docs:
+        // "**NOTE**: you may only make one request at a time to this API endpoint. Higher concurrency will result in an
+        // error being returned."
+        morechildrenLock.lock();
+        try {
+            response = execute(request()
+                    .endpoint(Endpoints.MORECHILDREN)
+                    .post(JrawUtils.mapOf(
+                            "children", ids.toString(),
+                            "link_id", linkId,
+                            "sort", commentSort.name().toLowerCase(),
+                            "api_type", "json"
+                    )).build());
+        } finally {
+            morechildrenLock.unlock();
+        }
+
+        JsonNode things = response.getJson().get("json").get("data").get("things");
+        List<Thing> commentList = new ArrayList<>(things.size());
+        for (JsonNode node : things) {
+            String kind = node.get("kind").asText();
+            JsonNode data = node.get("data");
+            if (node.get("kind").asText().equals(Model.Kind.COMMENT.getValue())) {
+                commentList.add(new Comment(data));
+            } else if (node.get("kind").asText().equals(Model.Kind.MORE.getValue())) {
+                commentList.add(new MoreChildren(data));
+            } else {
+                throw new IllegalArgumentException(String.format("Unexpected data type: %s. Expecting %s or %s",
+                        kind, Model.Kind.COMMENT, Model.Kind.MORE));
+            }
+        }
+
+        return commentList;
     }
 
     /**

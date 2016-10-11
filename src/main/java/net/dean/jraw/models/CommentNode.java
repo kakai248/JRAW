@@ -100,7 +100,7 @@ public final class CommentNode implements Iterable<CommentNode> {
         this.children = createChildNodes(topLevelReplies);
     }
 
-    private CommentNode(String ownerId, CommentNode parent, Comment data, MoreChildren moreChildren, CommentSort commentSort, int depth) {
+    public CommentNode(String ownerId, CommentNode parent, Comment data, MoreChildren moreChildren, CommentSort commentSort, int depth) {
         this.ownerId = ownerId;
         this.depth = depth;
         this.parent = parent;
