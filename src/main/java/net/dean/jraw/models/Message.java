@@ -84,6 +84,11 @@ public abstract class Message extends Contribution implements Distinguishable {
         return data("subreddit");
     }
 
+    @JsonProperty
+    public String getContext() {
+        return data("context");
+    }
+
     /**
      * Checks if this message is a comment. If true, then one may assume that this Message is an instance of
      * {@link CommentMessage}, else {@link PrivateMessage}.
