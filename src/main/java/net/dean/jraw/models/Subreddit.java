@@ -2,13 +2,16 @@ package net.dean.jraw.models;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import net.dean.jraw.models.attr.Created;
 import net.dean.jraw.models.meta.JsonProperty;
 import net.dean.jraw.models.meta.Model;
 import net.dean.jraw.util.Dimension;
 
+import java.util.Date;
+
 /** This class represents a subreddit, such as /r/pics. */
 @Model(kind = Model.Kind.SUBREDDIT)
-public final class Subreddit extends Thing implements Comparable<Subreddit> {
+public final class Subreddit extends Thing implements Created, Comparable<Subreddit> {
 
     /** Instantiates a new Subreddit */
     public Subreddit(JsonNode dataNode) {
@@ -175,6 +178,10 @@ public final class Subreddit extends Thing implements Comparable<Subreddit> {
         return data("banner_img", String.class);
     }
 
+    @Override
+    public Date getCreated() {
+        return _getCreated();
+    }
 
     @Override
     public int compareTo(Subreddit subreddit) {
