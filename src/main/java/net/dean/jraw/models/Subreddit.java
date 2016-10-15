@@ -178,6 +178,16 @@ public final class Subreddit extends Thing implements Created, Comparable<Subred
         return data("banner_img", String.class);
     }
 
+    @JsonProperty
+    public String getIconImage() {
+        return data("icon_img", String.class);
+    }
+
+    @JsonProperty
+    public String getKeyColor() {
+        return data("key_color", String.class);
+    }
+
     @Override
     public Date getCreated() {
         return _getCreated();
