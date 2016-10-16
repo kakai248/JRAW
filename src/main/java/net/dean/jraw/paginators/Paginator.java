@@ -124,6 +124,16 @@ public abstract class Paginator<T extends Thing> implements RedditIterable<T> {
     }
 
     @Override
+    public final List<Listing<T>> accumulate() throws NetworkException {
+        List<Listing<T>> listings = new ArrayList<>();
+        while (iterator.hasNext()) {
+            listings.add(next(true));
+        }
+
+        return listings;
+    }
+
+    @Override
     public final List<Listing<T>> accumulate(int maxPages) throws NetworkException {
         if (maxPages <= 0) {
             throw new IllegalArgumentException("maxPages must be greater than 0");
@@ -135,6 +145,18 @@ public abstract class Paginator<T extends Thing> implements RedditIterable<T> {
         }
 
         return listings;
+    }
+
+    @Override
+    public final List<T> accumulateMerged() throws NetworkException {
+        List<Listing<T>> listings = accumulate();
+        List<T> flattened = new ArrayList<>();
+
+        for (Listing<T> listing : listings) {
+            flattened.addAll(listing);
+        }
+
+        return flattened;
     }
 
     @Override

@@ -25,6 +25,8 @@ public interface RedditIterable<T extends Thing> extends Iterable<Listing<T>> {
     /** Checks if Reddit can provide a next page. */
     boolean hasNext();
 
+    List<Listing<T>> accumulate() throws NetworkException;
+
     /**
      * Creates a list of listings whose size is less than or equal to the given number of pages. The amount of time this
      * method takes to return will grow linearly based on the maximum number of pages, as there will be one request for
@@ -34,6 +36,8 @@ public interface RedditIterable<T extends Thing> extends Iterable<Listing<T>> {
      * @return A list of listings
      */
     List<Listing<T>> accumulate(int maxPages) throws NetworkException;
+
+    List<T> accumulateMerged() throws NetworkException;
 
     /**
      * Creates a list of Things whose size is less than or equal to
