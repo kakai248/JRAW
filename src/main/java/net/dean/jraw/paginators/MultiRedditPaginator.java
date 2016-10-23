@@ -46,7 +46,7 @@ public class MultiRedditPaginator extends Paginator<Submission> {
 
     @Override
     protected String getBaseUri() {
-        String path = sorting == null ? "" : "/" + sorting.name().toLowerCase();
+        String path = sorting == null ? "" : sorting.name().toLowerCase();
         return this.path + path;
     }
 
